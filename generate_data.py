@@ -25,7 +25,7 @@ def generate_training_data(data_rows, num_samples=2000):
     them into messy, unstructured strings while tracking exact character offsets
     for each entity label.
     
-    Supports 6 formatting variations to make the model robust against real-world input.
+    Supports 7 formatting variations to make the model robust against real-world input.
     """
     training_data = []
     
@@ -37,11 +37,11 @@ def generate_training_data(data_rows, num_samples=2000):
         state = row["State"]
         zip_code = row["Zip"]
         
-        # Randomly choose a formatting style (6 variations)
-        style = random.choice([1, 2, 3, 4, 5, 6])
+        # Randomly choose a formatting style (7 variations)
+        style = random.choice([1, 2, 3, 4, 5, 6, 7])
         
-        # Style 3 and 6 use lowercase to train on case-insensitive input
-        if style in [3, 6]:
+        # Style 3, 6, 7 use lowercase to train on case-insensitive input
+        if style in [3, 6, 7]:
             street = street.lower()
             city = city.lower()
             state = state.lower()
@@ -116,6 +116,17 @@ def generate_training_data(data_rows, num_samples=2000):
             entities.append((len(raw_text), len(raw_text) + len(zip_code), "ZIP"))
             raw_text += zip_code
             
+        elif style == 7:
+            # lowercase no spaces after comma "street city,state zip"
+            entities.append((len(raw_text), len(raw_text) + len(street), "STREET"))
+            raw_text += street + " "
+            entities.append((len(raw_text), len(raw_text) + len(city), "CITY"))
+            raw_text += city + ","
+            entities.append((len(raw_text), len(raw_text) + len(state), "STATE"))
+            raw_text += state + " "
+            entities.append((len(raw_text), len(raw_text) + len(zip_code), "ZIP"))
+            raw_text += zip_code
+            
         training_data.append((raw_text, {"entities": entities}))
             
     return training_data
@@ -134,4 +145,4 @@ if __name__ == "__main__":
         json.dump(data, f, indent=2)
         
     print(f"Successfully generated {len(data)} training samples and saved to training_data.json")
-    print(f"Format variations: comma-separated, space-separated, lowercase, mixed punctuation")
+    print(f"Format variations: comma-separated, space-separated, lowercase, mixed punctuation, missing spaces")
