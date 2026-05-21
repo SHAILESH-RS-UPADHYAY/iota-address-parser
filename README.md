@@ -195,4 +195,12 @@ iota-address-parser/
 
 ---
 
+> ### 💡 Architectural Note: The "Hybrid" Production Strategy
+> 
+> *If business requirements strictly limit parsing to US-only addresses, relying 100% on a probabilistic neural network to guess States or known Cities is inefficient and prone to hallucination. For a true production-grade system, I advocate for a **Hybrid Rule-Based + ML Approach**.*
+> 
+> *By integrating SpaCy's `EntityRuler` as a Knowledge Base (Gazetteer) populated with all 50 US States, their abbreviations, and a comprehensive database of US Cities, the rule-based system can tag known geography with **100% deterministic accuracy** in microseconds. The Neural Network is then exclusively reserved to do the heavy lifting for the messy, unpredictable, and highly variable parts — like Street names. Combining deterministic rules with probabilistic ML always yields the highest accuracy, lowest latency, and most cost-effective production architecture.*
+
+---
+
 <p align="center"><i>Built as a prototype for <b>Iota Analytics, Mohali</b> — demonstrating end-to-end ML engineering from data generation to model deployment.</i></p>
