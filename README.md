@@ -44,18 +44,19 @@ flowchart TD
     classDef outputNode fill:#2ECC71,stroke:#27AE60,color:#fff,stroke-width:2px
     classDef fileNode fill:#F39C12,stroke:#E67E22,color:#fff,stroke-width:2px
 
-    A["📦 Structured CSV Data<br/>(Kaggle / OpenAddresses)"]:::dataNode
+    A["📦 us_addresses.csv<br/>200+ Real US Addresses"]:::dataNode
     B["⚙️ generate_data.py<br/>Programmatic Weak Supervision"]:::processNode
-    C["🔀 Random Format Variations<br/>Commas · Spaces · Case Mixing"]:::processNode
+    C["🔀 6 Format Variations<br/>Commas · Spaces · Case Mixing"]:::processNode
     D["📐 Dynamic Offset Calculation<br/>Exact Character Spans per Entity"]:::processNode
-    E[("💾 training_data.json<br/>100+ Labeled Samples")]:::fileNode
+    E[("💾 training_data.json<br/>2,500 Labeled Samples")]:::fileNode
     F["🧠 SpaCy Blank Model<br/>English Pipeline"]:::modelNode
     G["🏷️ Custom NER Labels Injected<br/>STREET · CITY · STATE · ZIP"]:::modelNode
-    H["🔁 Training Loop<br/>20 Iterations · SGD · Dropout 0.35"]:::modelNode
+    H["🔁 Training Loop<br/>30 Epochs · SGD · Dropout 0.35"]:::modelNode
     I[("🎯 address_ner_model/<br/>Trained Weights on Disk")]:::fileNode
-    J["⌨️ inference.py<br/>Interactive CLI Engine"]:::outputNode
-    K["📝 Raw User Input<br/>Any Unstructured Address"]:::dataNode
-    L["✅ Structured JSON Output<br/>Street · City · State · Zip"]:::outputNode
+    J["📊 evaluate_model.py<br/>Precision · Recall · F1"]:::processNode
+    K["⌨️ inference.py<br/>Interactive CLI Engine"]:::outputNode
+    L["📝 Raw User Input<br/>Any Unstructured Address"]:::dataNode
+    M["✅ Structured JSON Output<br/>Street · City · State · Zip"]:::outputNode
 
     A --> B
     B --> C
@@ -67,17 +68,19 @@ flowchart TD
     G --> H
     H --> I
     I --> J
-    K --> J
-    J --> L
+    I --> K
+    L --> K
+    K --> M
 ```
 
 ### Stage Breakdown
 
 | Stage | Script | What It Does | Key Technique |
 |:------|:-------|:-------------|:--------------|
-| **1. Data Generation** | `generate_data.py` | Takes structured address rows and reverse-engineers them into messy, unstructured strings with exact NER labels | Programmatic Weak Supervision — eliminates manual labeling |
-| **2. Model Training** | `train_model.py` | Initializes a blank SpaCy neural network, injects custom entity labels, and trains using randomized mini-batches | Stochastic Gradient Descent with 35% Dropout to prevent overfitting |
-| **3. Inference** | `inference.py` | Loads the saved model weights and provides an interactive CLI where any address can be typed and parsed in real-time | Model deserialization and token-level entity extraction |
+| **1. Data Generation** | `generate_data.py` | Loads 200+ real US addresses from CSV and generates 2,500 training samples with 6 format variations | Programmatic Weak Supervision — eliminates manual labeling |
+| **2. Model Training** | `train_model.py` | Initializes a blank SpaCy neural network, injects custom entity labels, and trains for 30 epochs | Stochastic Gradient Descent with 35% Dropout to prevent overfitting |
+| **3. Evaluation** | `evaluate_model.py` | Performs 80/20 train-test split and computes per-entity Precision, Recall, and F1-Score | SpaCy Scorer with micro-averaged metrics |
+| **4. Inference** | `inference.py` | Loads the saved model weights and provides an interactive CLI where any address can be typed and parsed in real-time | Model deserialization and token-level entity extraction |
 
 ---
 
@@ -129,10 +132,15 @@ Processing...
 }
 ```
 
-### 3. Re-Train from Scratch (Optional)
+### 3. Evaluate the Model
 ```bash
-python generate_data.py    # Generates 100 labeled samples
-python train_model.py      # Trains NER model (20 epochs)
+python evaluate_model.py   # 80/20 split → Precision, Recall, F1
+```
+
+### 4. Re-Train from Scratch (Optional)
+```bash
+python generate_data.py    # Generates 2,500 labeled samples from 200+ real addresses
+python train_model.py      # Trains NER model (30 epochs)
 ```
 
 ---
@@ -169,10 +177,12 @@ Wrap the production model in a **FastAPI** microservice, containerize with **Doc
 
 ```
 iota-address-parser/
+├── us_addresses.csv        # 200+ real US addresses (source data)
 ├── generate_data.py        # Synthetic data generation pipeline
 ├── train_model.py          # SpaCy NER training loop
+├── evaluate_model.py       # Model evaluation (Precision/Recall/F1)
 ├── inference.py            # Interactive parsing CLI
-├── training_data.json      # Generated training samples
+├── training_data.json      # 2,500 generated training samples
 ├── requirements.txt        # Python dependencies
 ├── address_ner_model/      # Saved model weights (ready to use)
 │   ├── config.cfg

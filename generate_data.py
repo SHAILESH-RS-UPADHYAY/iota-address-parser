@@ -1,29 +1,35 @@
 import json
 import random
+import csv
+import os
 
-# Mock structured dataset (In a real scenario, this comes from Kaggle/OpenAddresses CSV)
-# Columns: Street, City, State, Zip
-mock_structured_data = [
-    {"Street": "123 Main St", "City": "New York", "State": "NY", "Zip": "10001"},
-    {"Street": "456 Elm Street", "City": "Los Angeles", "State": "CA", "Zip": "90001"},
-    {"Street": "789 Pine Ave", "City": "Seattle", "State": "WA", "Zip": "98101"},
-    {"Street": "321 Maple Dr", "City": "Austin", "State": "TX", "Zip": "73301"},
-    {"Street": "555 Cedar Blvd", "City": "Chicago", "State": "IL", "Zip": "60601"},
-    {"Street": "999 Oak Lane", "City": "Miami", "State": "FL", "Zip": "33101"},
-    {"Street": "777 Birch Court", "City": "Denver", "State": "CO", "Zip": "80201"},
-    {"Street": "888 Spruce Way", "City": "Boston", "State": "MA", "Zip": "02101"},
-    {"Street": "222 Walnut St", "City": "San Francisco", "State": "CA", "Zip": "94101"},
-    {"Street": "444 Cherry Ave", "City": "Portland", "State": "OR", "Zip": "97201"}
-]
+def load_addresses_from_csv(filepath):
+    """Load structured addresses from a CSV file."""
+    data = []
+    with open(filepath, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            data.append({
+                "Street": row["Street"].strip(),
+                "City": row["City"].strip(),
+                "State": row["State"].strip(),
+                "Zip": row["Zip"].strip()
+            })
+    return data
 
-# We need to format the data into SpaCy's expected format:
-# ("Raw String", {"entities": [(start_char, end_char, "LABEL")]})
-
-def generate_training_data(data_rows, num_samples=50):
+def generate_training_data(data_rows, num_samples=2000):
+    """
+    Generate SpaCy NER training data using Programmatic Weak Supervision.
+    
+    Takes structured address rows (Street, City, State, Zip) and reverse-engineers
+    them into messy, unstructured strings while tracking exact character offsets
+    for each entity label.
+    
+    Supports 6 formatting variations to make the model robust against real-world input.
+    """
     training_data = []
     
     for _ in range(num_samples):
-        # Pick a random row
         row = random.choice(data_rows)
         
         street = row["Street"]
@@ -31,10 +37,11 @@ def generate_training_data(data_rows, num_samples=50):
         state = row["State"]
         zip_code = row["Zip"]
         
-        # Randomly choose a formatting style to make the model robust
-        style = random.choice([1, 2, 3])
+        # Randomly choose a formatting style (6 variations)
+        style = random.choice([1, 2, 3, 4, 5, 6])
         
-        if style == 3:
+        # Style 3 and 6 use lowercase to train on case-insensitive input
+        if style in [3, 6]:
             street = street.lower()
             city = city.lower()
             state = state.lower()
@@ -43,31 +50,69 @@ def generate_training_data(data_rows, num_samples=50):
         entities = []
         raw_text = ""
         
-        if style == 1 or style == 3:
-            # Format: "Street, City, State Zip"
+        if style == 1:
+            # "Street, City, State Zip"
             entities.append((len(raw_text), len(raw_text) + len(street), "STREET"))
             raw_text += street + ", "
-            
             entities.append((len(raw_text), len(raw_text) + len(city), "CITY"))
             raw_text += city + ", "
-            
             entities.append((len(raw_text), len(raw_text) + len(state), "STATE"))
             raw_text += state + " "
-            
             entities.append((len(raw_text), len(raw_text) + len(zip_code), "ZIP"))
             raw_text += zip_code
             
         elif style == 2:
-            # Format: "Street City State Zip"
+            # "Street City State Zip" (no commas)
             entities.append((len(raw_text), len(raw_text) + len(street), "STREET"))
             raw_text += street + " "
-            
             entities.append((len(raw_text), len(raw_text) + len(city), "CITY"))
             raw_text += city + " "
-            
             entities.append((len(raw_text), len(raw_text) + len(state), "STATE"))
             raw_text += state + " "
+            entities.append((len(raw_text), len(raw_text) + len(zip_code), "ZIP"))
+            raw_text += zip_code
             
+        elif style == 3:
+            # lowercase "street, city, state zip"
+            entities.append((len(raw_text), len(raw_text) + len(street), "STREET"))
+            raw_text += street + ", "
+            entities.append((len(raw_text), len(raw_text) + len(city), "CITY"))
+            raw_text += city + ", "
+            entities.append((len(raw_text), len(raw_text) + len(state), "STATE"))
+            raw_text += state + " "
+            entities.append((len(raw_text), len(raw_text) + len(zip_code), "ZIP"))
+            raw_text += zip_code
+            
+        elif style == 4:
+            # "Street, City State Zip" (comma only after street)
+            entities.append((len(raw_text), len(raw_text) + len(street), "STREET"))
+            raw_text += street + ", "
+            entities.append((len(raw_text), len(raw_text) + len(city), "CITY"))
+            raw_text += city + " "
+            entities.append((len(raw_text), len(raw_text) + len(state), "STATE"))
+            raw_text += state + " "
+            entities.append((len(raw_text), len(raw_text) + len(zip_code), "ZIP"))
+            raw_text += zip_code
+            
+        elif style == 5:
+            # "Street City, State Zip" (comma only after city)
+            entities.append((len(raw_text), len(raw_text) + len(street), "STREET"))
+            raw_text += street + " "
+            entities.append((len(raw_text), len(raw_text) + len(city), "CITY"))
+            raw_text += city + ", "
+            entities.append((len(raw_text), len(raw_text) + len(state), "STATE"))
+            raw_text += state + " "
+            entities.append((len(raw_text), len(raw_text) + len(zip_code), "ZIP"))
+            raw_text += zip_code
+            
+        elif style == 6:
+            # lowercase no commas "street city state zip"
+            entities.append((len(raw_text), len(raw_text) + len(street), "STREET"))
+            raw_text += street + " "
+            entities.append((len(raw_text), len(raw_text) + len(city), "CITY"))
+            raw_text += city + " "
+            entities.append((len(raw_text), len(raw_text) + len(state), "STATE"))
+            raw_text += state + " "
             entities.append((len(raw_text), len(raw_text) + len(zip_code), "ZIP"))
             raw_text += zip_code
             
@@ -76,11 +121,17 @@ def generate_training_data(data_rows, num_samples=50):
     return training_data
 
 if __name__ == "__main__":
-    print("Generating synthetic training data...")
-    data = generate_training_data(mock_structured_data, num_samples=100)
+    csv_path = os.path.join(os.path.dirname(__file__), "us_addresses.csv")
     
-    # Save to JSON for the training script to consume
+    print(f"Loading structured addresses from {csv_path}...")
+    structured_data = load_addresses_from_csv(csv_path)
+    print(f"Loaded {len(structured_data)} unique real US addresses.")
+    
+    print("Generating synthetic training data with 6 format variations...")
+    data = generate_training_data(structured_data, num_samples=2500)
+    
     with open("training_data.json", "w") as f:
-        json.dump(data, f, indent=4)
+        json.dump(data, f, indent=2)
         
     print(f"Successfully generated {len(data)} training samples and saved to training_data.json")
+    print(f"Format variations: comma-separated, space-separated, lowercase, mixed punctuation")
