@@ -1,26 +1,34 @@
+<div align="center">
+
+# 📍 Iota Address Parser
+
+**An intelligent NER-powered engine that transforms messy, unstructured address strings into clean, structured JSON.**<br/>
+*Built with SpaCy and Programmatic Weak Supervision.*
+
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![SpaCy](https://img.shields.io/badge/SpaCy-NER-09A3D5?style=for-the-badge&logo=spacy&logoColor=white)](https://spacy.io/)
 [![ML Pipeline](https://img.shields.io/badge/Pipeline-End--to--End-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white)](https://github.com/SHAILESH-RS-UPADHYAY/iota-address-parser)
 
-# 🏠 Iota Address Parser
-
-An intelligent NER-powered engine that transforms messy, unstructured address strings into clean, structured JSON — built with SpaCy and Programmatic Weak Supervision.
-
-Built as a prototype for **Iota Analytics, Mohali** — demonstrating end-to-end ML engineering from data generation to model deployment.
+</div>
 
 ---
 
-## How It Works
+## 🚀 How It Works
 
 **End-to-end pipeline:**
-> `Raw CSV Addresses` ➜ `Synthetic Data Generator (7 format variations)` ➜ `SpaCy NER Training (SGD + Dropout)` ➜ `Evaluation (P/R/F1)` ➜ `Interactive Inference CLI`
+> `Raw CSV Addresses` ➔ `Synthetic Data Generator` ➔ `SpaCy NER Training` ➔ `Evaluation` ➔ `Interactive Inference CLI`
 
-```
-Input:  "456 oak avenue, portland, oregon 97201"
-Output: { "Street": "456 oak avenue", "City": "portland", "State": "oregon", "Zip": "97201" }
+```json
+// Input: "456 oak avenue, portland, oregon 97201"
+{
+  "Street": "456 oak avenue",
+  "City": "portland",
+  "State": "oregon",
+  "Zip": "97201"
+}
 ```
 
-The model extracts **4 entity types** from free-text addresses:
+The model extracts **4 core entity types** from free-text addresses:
 
 | Entity | Description | Example |
 |--------|-------------|---------|
@@ -31,7 +39,7 @@ The model extracts **4 entity types** from free-text addresses:
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#4F46E5', 'edgeLabelBackground':'#ffffff'}}}%%
@@ -53,34 +61,26 @@ graph TD
 
 ---
 
-## Why These Technical Choices
+## 🧠 Why These Technical Choices?
 
-- **SpaCy over Transformers/BERT** — For structured entity extraction from short text, SpaCy's statistical NER is faster, lighter, and produces comparable accuracy. BERT would be overkill for 4-entity extraction from single-line inputs.
-
-- **Programmatic Weak Supervision over manual labeling** — Instead of hand-labeling 2500 addresses, I wrote labeling functions that reverse-engineer structured CSV rows into messy strings while tracking exact character offsets. This generates perfectly labeled data at scale with zero human annotation cost.
-
-- **7 format variations for robustness** — Real-world addresses come in wildly inconsistent formats. The generator creates:
-  - `Street, City, State Zip` (standard)
-  - `street city state zip` (no commas, lowercase)
-  - `Street City,State Zip` (missing spaces)
-  - And 4 more variations — forcing the model to learn patterns, not punctuation.
-
-- **Compounding batch sizes (8→64)** — Starts with small batches for precise early learning, then scales up for stable convergence. This is a well-known SpaCy training optimization.
-
-- **25% dropout regularization** — Prevents overfitting on a synthetically generated dataset where patterns could be too clean.
+*   **SpaCy over Transformers/BERT:** For structured entity extraction from short text, SpaCy's statistical NER is faster, lighter, and produces comparable accuracy. BERT would be overkill for 4-entity extraction from single-line inputs.
+*   **Programmatic Weak Supervision over Manual Labeling:** Instead of hand-labeling 2,500 addresses, I wrote labeling functions that reverse-engineer structured CSV rows into messy strings while tracking exact character offsets. This generates perfectly labeled data at scale with zero human annotation cost.
+*   **7 Format Variations for Robustness:** Real-world addresses come in wildly inconsistent formats. The generator creates various permutations (e.g., standard, missing spaces, lowercase) forcing the model to learn patterns, not just punctuation.
+*   **Compounding Batch Sizes (8 ➔ 64):** Starts with small batches for precise early learning, then scales up for stable convergence—a well-known SpaCy training optimization.
+*   **25% Dropout Regularization:** Prevents overfitting on a synthetically generated dataset where patterns could otherwise be too clean.
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
-```
+```text
 iota-address-parser/
-├── generate_data.py        # Synthetic data generator (Programmatic Weak Supervision)
-├── train_model.py          # SpaCy NER training loop (SGD, dropout, compounding batches)
-├── evaluate_model.py       # Precision/Recall/F1 scoring with train/test split
+├── generate_data.py        # Synthetic data generator (Weak Supervision)
+├── train_model.py          # SpaCy NER training loop
+├── evaluate_model.py       # Precision/Recall/F1 scoring
 ├── inference.py            # Interactive CLI for live address parsing
-├── us_addresses.csv        # Seed data: 100+ real US addresses
-├── training_data.json      # Generated: 2500 labeled training samples
+├── us_addresses.csv        # Seed data
+├── training_data.json      # Generated labeled training samples
 ├── address_ner_model/      # Trained SpaCy model artifact
 │   ├── meta.json
 │   ├── config.cfg
@@ -88,38 +88,51 @@ iota-address-parser/
 └── requirements.txt
 ```
 
-## Run It Locally
+---
 
+## 💻 Run It Locally
+
+**1. Clone the repository**
 ```bash
-# 1. Clone
 git clone https://github.com/SHAILESH-RS-UPADHYAY/iota-address-parser.git
 cd iota-address-parser
-
-# 2. Install
-pip install -r requirements.txt
-
-# 3. Generate training data (2500 samples from 100+ real addresses)
-python generate_data.py
-
-# 4. Train the model (50 epochs, ~2 min on CPU)
-python train_model.py
-
-# 5. Evaluate (prints Precision, Recall, F1 per entity)
-python evaluate_model.py
-
-# 6. Try it live
-python inference.py
-# → Enter: "456 oak avenue, portland, oregon 97201"
-# → Output: {"Street": "456 oak avenue", "City": "portland", "State": "oregon", "Zip": "97201"}
 ```
 
-## Known Limitations & What I'd Improve
+**2. Install dependencies**
+```bash
+pip install -r requirements.txt
+```
 
-- **US-only addresses** — Currently trained on US address formats. Supporting international formats (India, UK) would require additional labeling functions and entity types (e.g., `DISTRICT`, `PIN_CODE`).
-- **No apartment/unit handling** — Addresses like "123 Main St, Apt 4B" aren't split into separate street and unit entities. This would require adding a `UNIT` label and updating the generator.
-- **Evaluation on synthetic data** — The test set is generated by the same process as training data. A production evaluation would need a hand-labeled holdout set of real messy addresses.
-- **No API wrapper** — Currently CLI-only. In production, this would be wrapped in a FastAPI endpoint for batch processing.
+**3. Generate training data** *(creates 2,500 samples from 100+ real addresses)*
+```bash
+python generate_data.py
+```
+
+**4. Train the model** *(50 epochs, ~2 min on CPU)*
+```bash
+python train_model.py
+```
+
+**5. Evaluate performance** *(prints Precision, Recall, F1 per entity)*
+```bash
+python evaluate_model.py
+```
+
+**6. Try it live!**
+```bash
+python inference.py
+```
 
 ---
 
-*Built for Iota Analytics — demonstrating end-to-end ML engineering from data generation to deployment.*
+## 🚧 Known Limitations & Future Improvements
+
+*   **US-Only Addresses:** Currently trained exclusively on US address formats. Supporting international formats (e.g., India, UK) would require additional labeling functions and entity types (e.g., `DISTRICT`, `PIN_CODE`).
+*   **No Apartment/Unit Handling:** Addresses like *"123 Main St, Apt 4B"* aren't split into separate street and unit entities yet.
+*   **Evaluation on Synthetic Data:** A production evaluation would require a hand-labeled holdout set of real, messy addresses.
+*   **No API Wrapper:** Currently CLI-only. In production, this would be wrapped in a FastAPI endpoint for batch processing.
+
+<br/>
+<div align="center">
+  <i>Built to demonstrate end-to-end ML engineering from data generation to deployment.</i>
+</div>
