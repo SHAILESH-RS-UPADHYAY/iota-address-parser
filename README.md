@@ -1,4 +1,5 @@
 <div align="center">
+<img src=".github/logo.svg" width="88" height="88" alt="Iota Address Parser logo">
 
 # 📍 Iota Address Parser
 
